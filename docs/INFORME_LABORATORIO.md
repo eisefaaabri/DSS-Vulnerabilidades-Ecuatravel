@@ -2,7 +2,7 @@
 
 **Proyecto:** Ecuatravel, microservicio de Atracciones Turísticas
 **Repositorio del laboratorio:** https://github.com/eisefaaabri/DSS-Vulnerabilidades-Ecuatravel
-**Alcance de este documento:** Fase 1 (investigación inicial), Fase 2 (implementación insegura controlada) y Fase 3 (corrección segura y endurecimiento), con las pruebas que adelantan la Fase 4
+**Alcance de este documento:** las cuatro fases de la práctica (investigación, implementación insegura controlada, corrección y validación), las conclusiones y los entregables
 
 ---
 
@@ -339,9 +339,51 @@ La prueba 10 muestra que copiar la configuración de desarrollo a producción no
 
 ---
 
-## Fase 4 (adelanto). Pruebas de validación ejecutadas
+## Fase 4. Validación, análisis y pruebas
 
-Pruebas sobre la versión corregida, en local:
+### 4.1 Metodología
+
+La validación quedó automatizada en `scripts/validar-seguridad.mjs`. Así se puede repetir en cualquier momento y el resultado no depende de pruebas manuales:
+
+```bash
+npm run validar
+```
+
+El script corre contra la aplicación levantada en local (API, base y frontend compilado) y agrupa las pruebas en cinco categorías:
+
+| Categoría | Qué comprueba | Pruebas |
+|---|---|---|
+| Funcional | Que la app sigue funcionando con la configuración segura: catálogo, registro, login, reservas, panel de administración, creación de atracciones, integración M2M | 15 |
+| Secretos | Que ningún secreto aparezca en respuestas HTTP, logs de arranque, Swagger, archivos versionados ni en el bundle del frontend; que los errores no devuelvan trazas; cabeceras seguras y CORS | 10 |
+| Acceso | Autenticación y autorización: credenciales y tokens de la Fase 2, JWT forjados, expiración, roles, API key, fuerza bruta | 11 |
+| Base de datos | Atributos de los roles, operaciones que el usuario de la app no puede hacer, contraseñas antiguas | 10 |
+| Ambientes | Que la app se niegue a arrancar con una configuración insegura o de otro ambiente | 4 |
+
+Algunos detalles del método:
+
+- **Secretos sin mostrarlos:** el script lee los valores reales de `.env.development`, `.env.db` y `.env.seed` y los busca en cada salida, pero solo informa *si* aparecen, nunca *cuáles son*.
+- **Log de arranque:** se levanta una segunda instancia de la API en otro puerto, se captura su salida completa y se busca cada secreto.
+- **Ambientes:** se arranca la app con configuraciones malas (modo producción con la config de desarrollo, secreto débil, secretos repetidos, secreto faltante) y se verifica que termine con error y sin imprimir valores.
+- **Reporte:** cada ejecución genera `docs/RESULTADOS_VALIDACION.md` con fecha y hora, como evidencia.
+
+### 4.2 Resultados
+
+**Resultado: 50 de 50 pruebas pasan.** El detalle de cada prueba (esperado y obtenido) está en [`RESULTADOS_VALIDACION.md`](RESULTADOS_VALIDACION.md).
+
+Hallazgos durante la validación:
+
+- **Límite de intentos en el login.** En la segunda ejecución seguida, la prueba de `admin123` devolvió `429` en lugar de `401`, porque el login admite 5 intentos por minuto por IP. Es un control que ya existía (`@nestjs/throttler`). Se agregó una prueba específica de fuerza bruta al final del script y se indica esperar 60 segundos entre ejecuciones.
+- **Categorías solo en la v3.** La primera versión del script probaba `GET /v2/atracciones/categorias` y recibía `400`. El endpoint existe solo en la v3 (contrato con Booking) y el frontend no lo usa. Era un error de la prueba, no de la app, y se corrigió.
+
+**Prueba funcional en el navegador** (`http://localhost:5173`):
+
+- El inicio y el catálogo cargan a través del proxy de Vite.
+- Con la base vacía, el catálogo muestra su estado vacío. Después de que el script creara una atracción, la muestra ("Mostrando 1–1 de 1 experiencia"). Puede tardar hasta 5 minutos en aparecer, porque el catálogo responde con `Cache-Control: max-age=300` (caché del diseño original) y el navegador conserva la lista anterior.
+- Se interceptaron las peticiones del navegador: ninguna lleva la cabecera `X-API-Key`.
+
+**Regreso a la Fase 2.** Se verificó el procedimiento de la sección "Volver a la versión insegura". Con el tag `fase-2-inseguro` y su volumen original, la API vuelve a exponer `/debug/config` (200), acepta `admin123` (200) y `ecuatravel_app` vuelve a ser superusuario. Al regresar a `main`, el `.env` de la Fase 2 desaparece del disco y la base segura sigue intacta.
+
+### 4.3 Comparación antes y después
 
 | # | Prueba | Fase 2 | Fase 3 |
 |---|---|---|---|
@@ -361,6 +403,55 @@ Pruebas sobre la versión corregida, en local:
 | 14 | `psql` dentro del contenedor sin contraseña | Entraba (`trust`) | **Pide contraseña** (`scram-sha-256`) |
 | 15 | Bundle de producción del frontend | Contiene la clave M2M | **Sin clave** |
 | 16 | Frontend en `http://localhost:5173` | Funciona | Funciona; carga atracciones por el proxy |
+| 17 | JWT con algoritmo `none` | No probado | **401** |
+| 18 | Fuerza bruta en `/auth/login` | No probado | **429** antes del sexto intento |
+| 19 | Error con JSON malformado | No probado | **400** sin traza interna |
+| 20 | Petición desde un origen desconocido (CORS) | No probado | Sin `Access-Control-Allow-Origin` |
+
+### 4.4 Vulnerabilidades corregidas y riesgos mitigados
+
+Nivel de riesgo = probabilidad × impacto, en escala cualitativa (Bajo, Medio, Alto, Crítico).
+
+| ID | Vulnerabilidad | Riesgo antes | Medida aplicada | Riesgo después | Evidencia (pruebas del script) |
+|---|---|---|---|---|---|
+| VULN-01 | Contraseñas de la base en el código y en `docker-compose.yml` | **Alto**: acceso directo a la base para cualquiera con el repositorio | Variables de entorno, `.env.db` fuera de Git, contraseñas aleatorias nuevas | **Bajo** | "El código no tiene credenciales escritas", "Contraseña… de la Fase 2 rechazada" |
+| VULN-02 | Secreto JWT, API key y secreto de vouchers en el código; API key en el frontend; tokens de 30 días | **Crítico**: tokens ADMIN forjados sin credenciales, suplantación de Booking | Secretos en el entorno, validación de largo y unicidad, JWT de 1 h (15 min en producción), API key fuera del frontend | **Bajo** | "JWT forjado…", "JWT con algoritmo none", "Endpoint M2M…", "Los tokens expiran…", "El bundle del frontend…" |
+| VULN-03 | `.env` versionado, secretos en logs, endpoint `/debug/config` público | **Crítico**: todas las credenciales a un GET de distancia | `.gitignore` y `.dockerignore`, `git rm --cached`, endpoint eliminado, logs limpios, Swagger apagado en producción | **Medio** (residual: los valores viejos siguen en el historial, ya rotados) | "Endpoint de depuración eliminado", "El log de arranque…", "Ningún archivo .env…", "Los secretos actuales no están en archivos versionados" |
+| VULN-04 | Usuario de la base SUPERUSER; admin por defecto `admin123`; `createUser` crea ADMIN por omisión | **Alto**: control total del servidor de base ante cualquier fuga o inyección | Roles migrador y app sin atributos administrativos, solo DML para la app, `scram-sha-256` también dentro del contenedor, admin creado a mano con contraseña fuerte, rol obligatorio | **Bajo** | Pruebas de la categoría "Base de datos", "La contraseña por defecto admin123…", "Crear usuario sin rol…" |
+| — | Sin separación de ambientes | **Alto**: configuración de desarrollo en producción sin que nadie lo note | Plantillas por ambiente y reglas de producción que detienen el arranque | **Bajo** | Pruebas de la categoría "Ambientes" |
+
+Los riesgos residuales y sus mejoras posibles están en la sección **Riesgos residuales** de la Fase 3.
+
+---
+
+## Conclusiones sobre desarrollo seguro
+
+1. **Un secreto en el código es un secreto publicado.** En cuanto entra a un commit queda en cada clon, fork y copia del repositorio. Borrarlo después no lo recupera: el `.env` de la Fase 2 sigue en el historial. La única defensa real es no subirlo nunca y, si se sube, cambiarlo de inmediato.
+
+2. **`.gitignore` previene, pero no corrige.** Excluir el archivo evita la próxima fuga, no la anterior. Por eso la corrección combinó tres cosas: excluir, sacar del índice y rotar todos los valores.
+
+3. **El mínimo privilegio reduce el daño cuando algo falla.** En la Fase 2, cualquier fallo en la app le daba al atacante el servidor de base completo. En la Fase 3, aunque alguien robe la credencial de la app, solo puede leer y escribir datos: no borra tablas, no crea usuarios, no lee archivos del servidor. Separar el usuario que migra del que ejecuta cuesta poco y limita mucho el impacto.
+
+4. **La configuración debe validarse, no suponerse.** Varios fallos del proyecto original no estaban en la lógica, sino en lo que pasaba cuando faltaba una variable: un secreto de respaldo público y endpoints M2M abiertos sin clave. Hacer que la app se niegue a arrancar con una configuración incompleta o insegura convierte un error silencioso en uno visible.
+
+5. **Separar ambientes también es seguridad.** Un único `.env` para todo hace que las credenciales de desarrollo, que circulan por las máquinas del equipo, sean las mismas que las de producción. Con archivos y reglas por ambiente, copiar la configuración equivocada a producción se detecta al arrancar.
+
+6. **El frontend no guarda secretos.** Todo lo que llega al navegador (bundle, variables `VITE_`, cabeceras) lo puede leer cualquiera. Las claves entre servidores se quedan en el servidor.
+
+7. **La seguridad se demuestra con pruebas que se puedan repetir.** El script de la Fase 4 deja una evidencia que se puede volver a ejecutar después de cada cambio. Además, durante su construcción salieron a la luz controles que no estaban documentados (límite de intentos en el login) y detalles que no se veían a simple vista (PostgreSQL confiaba en las conexiones locales del contenedor).
+
+8. **Los defaults no son seguros por ser defaults.** La imagen oficial de PostgreSQL, el `createUser` con ADMIN por omisión y el secreto JWT de respaldo eran comportamientos por defecto. Revisarlos y cambiarlos a propósito es parte del trabajo.
+
+---
+
+## Entregables
+
+| Entregable | Dónde está |
+|---|---|
+| 1. Código corregido | Rama `main`, tag `fase-3-seguro` (corrección) y `fase-4-validado` (validación). La versión insegura queda en el tag `fase-2-inseguro`. |
+| 2. Capturas de pantalla | Las tomas el estudiante siguiendo las secciones "Capturas sugeridas" de las fases 2 y 3, más la salida de `npm run validar` |
+| 3. Informe técnico | Este documento (vulnerabilidades, soluciones y pruebas) y `docs/RESULTADOS_VALIDACION.md` |
+| 4. Conclusiones | Sección "Conclusiones sobre desarrollo seguro" |
 
 ---
 
@@ -408,6 +499,12 @@ Requisitos: Node.js y Docker Desktop encendido.
    cd FRONT-END-IS && npm install && npm run dev
    ```
 
+5. Validar. El script necesita el frontend compilado (`cd FRONT-END-IS && npm run build`) y que el backend esté corriendo con `npm run build` hecho, porque arranca instancias de prueba desde `dist/`:
+
+   ```bash
+   npm run validar
+   ```
+
 | Servicio | URL |
 |---|---|
 | API | http://localhost:3001/api/v3 |
@@ -417,7 +514,7 @@ Requisitos: Node.js y Docker Desktop encendido.
 
 ### Volver a la versión insegura (Fase 2) para tomar capturas
 
-La Fase 2 usa otro volumen (`pgdata`), así que sus datos siguen intactos:
+La Fase 2 usa otro volumen (`pgdata`), así que sus datos siguen intactos. Este procedimiento se probó en la Fase 4. Si hay cambios sin commitear, primero guárdalos con `git stash -u` y recupéralos con `git stash pop` al volver:
 
 ```bash
 npm run db:down

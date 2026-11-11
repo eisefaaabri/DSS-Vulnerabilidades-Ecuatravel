@@ -20,7 +20,8 @@
     "migration:run:prod": "typeorm migration:run -d dist/data-source.js",
     "db:up": "docker compose --env-file .env.db up -d",
     "db:down": "docker compose --env-file .env.db down",
-    "seed:admin": "ts-node -r tsconfig-paths/register src/scripts/crear-admin.ts"
+    "seed:admin": "ts-node -r tsconfig-paths/register src/scripts/crear-admin.ts",
+    "validar": "node scripts/validar-seguridad.mjs"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.6",
