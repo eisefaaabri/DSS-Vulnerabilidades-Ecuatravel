@@ -1,0 +1,318 @@
+@import "tailwindcss";
+
+/* Paleta Ecuador: andes, pacífico, tierra, volcán — neutros teñidos hacia el verde andino */
+@theme {
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Instrument Serif", Georgia, "Times New Roman", serif;
+
+  --color-ec-andes: oklch(0.42 0.08 163);
+  --color-ec-andes-light: oklch(0.55 0.1 160);
+  --color-ec-pacific: oklch(0.4 0.08 232);
+  --color-ec-pacific-light: oklch(0.5 0.1 232);
+  --color-ec-earth: oklch(0.52 0.1 80);
+  --color-ec-sand: oklch(0.9 0.04 85);
+  --color-ec-volcano: oklch(0.56 0.15 42);
+  --color-ec-volcano-hover: oklch(0.5 0.14 40);
+  --color-ec-mist: oklch(0.91 0.014 150);
+  --color-ec-paper: oklch(0.977 0.008 85);
+  --color-ec-ink: oklch(0.23 0.025 165);
+  --color-ec-slate: oklch(0.45 0.022 165);
+
+  /* Compatibilidad con clases existentes */
+  --color-ec-green: oklch(0.42 0.08 163);
+  --color-ec-blue: oklch(0.4 0.08 232);
+  --color-ec-orange: oklch(0.56 0.15 42);
+
+  --shadow-ec-card: 0 1px 2px oklch(0.23 0.025 165 / 0.06), 0 12px 32px -12px oklch(0.23 0.025 165 / 0.18);
+  --shadow-ec-hero: 0 20px 40px -16px oklch(0.3 0.1 40 / 0.45);
+
+  --ease-out-ui: cubic-bezier(0.23, 1, 0.32, 1);
+
+  --animate-rise: rise 0.7s var(--ease-out-ui) both;
+  --animate-fade-in: pop-in 0.24s var(--ease-out-ui) both;
+  --animate-backdrop: backdrop-in 0.2s var(--ease-out-ui) both;
+  --animate-menu-in: menu-in 0.2s var(--ease-out-ui) both;
+  --animate-ken-burns: ken-burns 24s ease-out both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes ken-burns {
+  from {
+    transform: scale(1.12);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    background-color: var(--color-ec-paper);
+    color: var(--color-ec-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Instrument Serif solo tiene peso 400: evitamos negritas sintéticas */
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-synthesis: none;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: oklch(0.56 0.15 42 / 0.2);
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-ec-volcano);
+    outline-offset: 2px;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-ec-ink);
+    color: white;
+    font-weight: 700;
+    border-radius: 0 0 0.5rem 0.5rem;
+  }
+
+  .skip-link:focus {
+    left: 1rem;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-bold;
+    color: oklch(0.99 0.005 85);
+    background: var(--color-ec-volcano);
+    min-height: 44px;
+    min-width: 44px;
+    transition:
+      background-color 160ms var(--ease-out-ui),
+      transform 160ms var(--ease-out-ui),
+      box-shadow 160ms var(--ease-out-ui);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-ec-volcano-hover);
+  }
+
+  .btn-primary:active:not(:disabled),
+  .btn-secondary:active:not(:disabled),
+  .btn-ghost:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .btn-primary:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-bold border min-h-11 min-w-11 px-4;
+    border-color: oklch(0.23 0.025 165 / 0.18);
+    color: var(--color-ec-ink);
+    background: transparent;
+    transition:
+      background-color 160ms var(--ease-out-ui),
+      border-color 160ms var(--ease-out-ui),
+      color 160ms var(--ease-out-ui),
+      transform 160ms var(--ease-out-ui);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--color-ec-ink);
+    background: oklch(0.23 0.025 165 / 0.04);
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-bold min-h-11 min-w-11 px-4;
+    color: oklch(0.99 0.005 85);
+    background: var(--color-ec-ink);
+    transition:
+      background-color 160ms var(--ease-out-ui),
+      transform 160ms var(--ease-out-ui);
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--color-ec-andes);
+  }
+
+  .eyebrow {
+    @apply text-xs font-bold uppercase;
+    letter-spacing: 0.16em;
+  }
+
+  .section-grid {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .catalog-grid {
+    display: grid;
+    gap: 2.5rem 1.25rem;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 640px) {
+    .catalog-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 3rem 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .catalog-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3.5rem 2rem;
+    }
+  }
+
+  .detail-grid {
+    display: grid;
+    gap: 2.5rem;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 1024px) {
+    .detail-grid {
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 3.5rem;
+      align-items: start;
+    }
+  }
+
+  .prose-disclosure details {
+    @apply border-t border-ec-mist;
+  }
+
+  .prose-disclosure details:last-child {
+    @apply border-b;
+  }
+
+  .prose-disclosure summary {
+    @apply cursor-pointer list-none py-5 font-bold text-ec-ink flex items-center justify-between gap-3 min-h-11;
+  }
+
+  .prose-disclosure summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .prose-disclosure summary::after {
+    content: "";
+    width: 0.6rem;
+    height: 0.6rem;
+    flex-shrink: 0;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-25%) rotate(45deg);
+    transition: transform 200ms var(--ease-out-ui);
+  }
+
+  .prose-disclosure details[open] summary::after {
+    transform: translateY(25%) rotate(-135deg);
+  }
+
+  .prose-disclosure .disclosure-body {
+    @apply pb-6 text-sm text-ec-slate leading-relaxed;
+  }
+
+  /* Aparición al hacer scroll (ver components/Reveal.jsx) */
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.7s var(--ease-out-ui),
+      transform 0.7s var(--ease-out-ui);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+
+  [data-reveal="shown"] {
+    opacity: 1;
+    transform: none;
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-ec-mist) 0%,
+      oklch(0.95 0.01 150) 50%,
+      var(--color-ec-mist) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s linear infinite;
+  }
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

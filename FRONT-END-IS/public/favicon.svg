@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Ecuador Travel">
+  <rect width="64" height="64" rx="14" fill="#1a5c45" />
+  <circle cx="45" cy="20" r="7" fill="#c45c26" />
+  <path d="M6 50 L24 22 L36 38 L44 28 L58 50 Z" fill="#e8dcc4" />
+  <path d="M6 50 L18 34 L30 50 Z" fill="#2d8a66" />
+  <rect x="6" y="50" width="52" height="4" rx="2" fill="#0e4d6e" />
+</svg>

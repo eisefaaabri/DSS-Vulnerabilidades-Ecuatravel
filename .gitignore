@@ -38,8 +38,6 @@ lerna-debug.log*
 .env.test
 .env.production
 
-# FRONTEND anidado
-/FRONT-END-IS/
 
 # Scripts locales de pruebas y seeding
 seed-*.js
