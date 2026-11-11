@@ -2,6 +2,10 @@ import { ConfigService } from "@nestjs/config";
 import { TypeOrmModuleOptions } from "@nestjs/typeorm";
 import { join } from "path";
 
+// [VULN-01] Credenciales de la base escritas en el código fuente.
+export const DATABASE_URL =
+  "postgresql://ecuatravel_app:EcuaTravel2026@localhost:5433/booking_db";
+
 // Con DB_SSL=true el cifrado se controla aquí: se quitan sslmode/sslrootcert de la
 // URL porque pg los antepone a la opción `ssl` y "require" exige verificar el
 // certificado, que en Supabase está firmado por su propia CA.
@@ -28,7 +32,7 @@ export function buildTypeOrmOptions(
 
   return {
     type: "postgres",
-    url: limpiarUrl(config.get<string>("DATABASE_URL"), ssl),
+    url: limpiarUrl(DATABASE_URL, ssl),
     ssl: ssl
       ? ca
         ? { ca, rejectUnauthorized: true }

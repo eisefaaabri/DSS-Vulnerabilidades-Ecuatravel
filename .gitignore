@@ -34,9 +34,7 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 # dotenv
-.env
-.env.test
-.env.production
+# [VULN-03] .env, .env.test y .env.production ya no se excluyen: se suben a Git.
 
 
 # Scripts locales de pruebas y seeding

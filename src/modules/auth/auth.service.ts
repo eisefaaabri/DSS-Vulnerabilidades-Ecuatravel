@@ -88,6 +88,7 @@ export class AuthService {
   async createUser(dto: CreateUserDto) {
     const usuario = await this.crearCuenta({
       ...dto,
+      // [VULN-04] Sin rol explícito, la cuenta nueva nace como ADMIN.
       rol: dto.rol ?? RolUsuario.ADMIN,
     });
     return this.vistaUsuario(usuario);

@@ -8,6 +8,8 @@ import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { correlationIdMiddleware } from "./common/middleware/correlation-id.middleware";
 import { requestLoggerMiddleware } from "./common/middleware/request-logger.middleware";
 import { buildCorsOptions } from "./common/cors.config";
+import { DATABASE_URL } from "./config/database.config";
+import { BOOKING_API_KEY, JWT_SECRET } from "./config/secretos";
 
 async function bootstrap() {
   const logger = new Logger("Bootstrap");
@@ -109,6 +111,10 @@ async function bootstrap() {
   logger.log(
     ` Healthcheck para Booking:      http://${tailscaleIp}:${port}/api/v3/atracciones/health`,
   );
+  // [VULN-03] Secretos impresos en consola: terminan en los logs del servidor.
+  logger.log(` Base de datos:                 ${DATABASE_URL}`);
+  logger.log(` JWT_SECRET:                    ${JWT_SECRET}`);
+  logger.log(` BOOKING_API_KEY:               ${BOOKING_API_KEY}`);
   logger.log(
     "==================================================================",
   );

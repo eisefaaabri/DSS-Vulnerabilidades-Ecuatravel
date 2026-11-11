@@ -1,16 +1,17 @@
-
 services:
   postgres:
     image: postgres:16
-    container_name: booking_db_container
+    container_name: dss_ecuatravel_db
     ports:
-      - '5432:5432'
+      - '5433:5432'
     environment:
       POSTGRES_DB: booking_db
+      # [VULN-01] Contraseña del superusuario en texto plano dentro del repositorio.
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: Admin2026
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./database/lab:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
 
 volumes:

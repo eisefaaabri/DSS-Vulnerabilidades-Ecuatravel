@@ -5,7 +5,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { VOUCHER_SECRET } from "../../config/secretos";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource, EntityManager } from "typeorm";
 import { createHash, createHmac, timingSafeEqual } from "crypto";
@@ -150,15 +150,9 @@ export class IntegracionBookingService {
     private readonly disponibilidad: DisponibilidadAppService,
     private readonly clientes: ClientesService,
     private readonly bookingCentral: BookingCentralClient,
-    config: ConfigService,
   ) {
-    const secret =
-      config.get<string>("VOUCHER_SECRET") ?? config.get<string>("JWT_SECRET");
-    if (!secret)
-      throw new Error(
-        "Defina VOUCHER_SECRET o JWT_SECRET para firmar vouchers.",
-      );
-    this.voucherSecret = secret;
+    // [VULN-02] Los vouchers QR se firman con el secreto fijo del código.
+    this.voucherSecret = VOUCHER_SECRET;
   }
 
   async crearReserva(

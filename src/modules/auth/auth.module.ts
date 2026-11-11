@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
-import { ConfigModule, ConfigService } from "@nestjs/config";
+import { JWT_EXPIRES_IN, JWT_SECRET } from "../../config/secretos";
 import { JwtStrategy } from "./jwt.strategy";
 import { IdentityModule } from "../identity/identity.module";
 import { BillingProfileModule } from "../billing-profile/billing-profile.module";
@@ -13,21 +13,10 @@ import { AuthService } from "./auth.service";
     IdentityModule,
     BillingProfileModule,
     PassportModule.register({ defaultStrategy: "jwt" }),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        const secret = configService.get<string>("JWT_SECRET");
-        if (!secret && configService.get<string>("NODE_ENV") === "production") {
-          throw new Error(
-            "JWT_SECRET es obligatorio cuando NODE_ENV=production",
-          );
-        }
-        return {
-          secret: secret || "fallback_secret_for_dev_only_123",
-          signOptions: { expiresIn: "1h" },
-        };
-      },
+    // [VULN-02] Secreto JWT fijo en el código y tokens válidos por 30 días.
+    JwtModule.register({
+      secret: JWT_SECRET,
+      signOptions: { expiresIn: JWT_EXPIRES_IN },
     }),
   ],
   controllers: [AuthController],

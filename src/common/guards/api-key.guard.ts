@@ -9,6 +9,7 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { Request } from "express";
 import { createHash, timingSafeEqual } from "crypto";
+import { BOOKING_API_KEY } from "../../config/secretos";
 
 /**
  * Autenticación M2M (ApiKeyAuth del contrato v3) por la cabecera `X-API-Key`.
@@ -23,7 +24,8 @@ export class ApiKeyGuard implements CanActivate {
   constructor(private readonly config: ConfigService) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const expected = this.config.get<string>("BOOKING_API_KEY");
+    // [VULN-02] Clave M2M compartida con Booking, fija en el código.
+    const expected = BOOKING_API_KEY;
     const isProduction = this.config.get<string>("NODE_ENV") === "production";
 
     if (!expected) {

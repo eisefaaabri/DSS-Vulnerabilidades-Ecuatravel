@@ -12,6 +12,7 @@ import { CatalogoBookingService } from "./catalogo-booking.service";
 import { OutboxService } from "./outbox.service";
 import { EventosController } from "./eventos.controller";
 import { HealthController } from "./health.controller";
+import { DebugController } from "./debug.controller";
 import { IntegracionBookingService } from "./integracion-booking.service";
 import { ReservasAppService } from "./reservas-app.service";
 import { DisponibilidadAppService } from "./disponibilidad-app.service";
@@ -55,6 +56,7 @@ import { ClientesModule } from "../clientes/clientes.module";
   // (ParseUUIDPipe) capturaría /atracciones/categorias, /eventos y /health.
   controllers: [
     HealthController,
+    DebugController,
     CatalogoBookingController,
     EventosController,
     AtraccionesController,

@@ -1,19 +1,16 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
-import { ConfigService } from "@nestjs/config";
+import { JWT_SECRET } from "../../config/secretos";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly configService: ConfigService) {
-    const secret = configService.get<string>("JWT_SECRET");
-    if (!secret && configService.get<string>("NODE_ENV") === "production") {
-      throw new Error("JWT_SECRET es obligatorio cuando NODE_ENV=production");
-    }
+  constructor() {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: secret || "fallback_secret_for_dev_only_123",
+      // [VULN-02] Verifica con el mismo secreto fijo del código.
+      secretOrKey: JWT_SECRET,
     });
   }
 
