@@ -5,6 +5,7 @@ import { ThrottlerModule } from "@nestjs/throttler";
 
 import { CommonModule } from "./common/common.module";
 import { buildTypeOrmOptions } from "./config/database.config";
+import { archivosEntorno, validarEntorno } from "./config/env.validation";
 import { AtraccionesModule } from "./modules/atracciones/atracciones.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { ClientesModule } from "./modules/clientes/clientes.module";
@@ -14,7 +15,8 @@ import { PersonalModule } from "./modules/personal/personal.module";
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ".env",
+      envFilePath: archivosEntorno(),
+      validate: validarEntorno,
     }),
 
     TypeOrmModule.forRootAsync({

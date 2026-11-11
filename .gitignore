@@ -33,8 +33,13 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# dotenv
-# [VULN-03] .env, .env.test y .env.production ya no se excluyen: se suben a Git.
+# Secretos: ningún archivo de entorno real se versiona, solo las plantillas.
+.env
+.env.*
+!.env.example
+!.env.*.example
+# El frontend versiona .env.development: solo contiene VITE_API_URL, que es público.
+!FRONT-END-IS/.env.development
 
 
 # Scripts locales de pruebas y seeding

@@ -4,41 +4,25 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
-  Logger,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Request } from "express";
 import { createHash, timingSafeEqual } from "crypto";
-import { BOOKING_API_KEY } from "../../config/secretos";
 
 /**
  * Autenticación M2M (ApiKeyAuth del contrato v3) por la cabecera `X-API-Key`.
- * Si BOOKING_API_KEY no está definida, en desarrollo se deja pasar (prueba por
- * Tailscale) y en producción se rechaza todo.
+ * BOOKING_API_KEY es obligatoria en todos los ambientes (ver env.validation.ts).
  */
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
-  private readonly logger = new Logger(ApiKeyGuard.name);
-  private warned = false;
+  private readonly expected: string;
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(config: ConfigService) {
+    this.expected = config.getOrThrow<string>("BOOKING_API_KEY");
+  }
 
   canActivate(context: ExecutionContext): boolean {
-    // [VULN-02] Clave M2M compartida con Booking, fija en el código.
-    const expected = BOOKING_API_KEY;
-    const isProduction = this.config.get<string>("NODE_ENV") === "production";
-
-    if (!expected) {
-      if (isProduction) throw this.unauthorized("API key no configurada");
-      if (!this.warned) {
-        this.logger.warn(
-          "BOOKING_API_KEY no definida: endpoints M2M abiertos (solo desarrollo)",
-        );
-        this.warned = true;
-      }
-      return true;
-    }
-
+    const expected = this.expected;
     const request = context.switchToHttp().getRequest<Request>();
     const received = request.headers["x-api-key"];
     if (typeof received !== "string" || !this.matches(received, expected)) {

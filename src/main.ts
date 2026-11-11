@@ -8,8 +8,6 @@ import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { correlationIdMiddleware } from "./common/middleware/correlation-id.middleware";
 import { requestLoggerMiddleware } from "./common/middleware/request-logger.middleware";
 import { buildCorsOptions } from "./common/cors.config";
-import { DATABASE_URL } from "./config/database.config";
-import { BOOKING_API_KEY, JWT_SECRET } from "./config/secretos";
 
 async function bootstrap() {
   const logger = new Logger("Bootstrap");
@@ -56,10 +54,12 @@ async function bootstrap() {
   );
 
   // 7. Documentación OpenAPI / Swagger v3.0.0
-  const swaggerEnabled =
-    configService.get<string>("SWAGGER_ENABLED", "true") === "true";
+  // En producción Swagger queda apagado salvo SWAGGER_ENABLED=true explícito.
   const isProduction = configService.get<string>("NODE_ENV") === "production";
-  if (!isProduction || swaggerEnabled) {
+  const swaggerEnabled =
+    configService.get<string>("SWAGGER_ENABLED", isProduction ? "false" : "true") ===
+    "true";
+  if (swaggerEnabled) {
     const config = new DocumentBuilder()
       .setTitle("API de Atracciones Turísticas — Integración RDA2")
       .setDescription(
@@ -111,10 +111,6 @@ async function bootstrap() {
   logger.log(
     ` Healthcheck para Booking:      http://${tailscaleIp}:${port}/api/v3/atracciones/health`,
   );
-  // [VULN-03] Secretos impresos en consola: terminan en los logs del servidor.
-  logger.log(` Base de datos:                 ${DATABASE_URL}`);
-  logger.log(` JWT_SECRET:                    ${JWT_SECRET}`);
-  logger.log(` BOOKING_API_KEY:               ${BOOKING_API_KEY}`);
   logger.log(
     "==================================================================",
   );

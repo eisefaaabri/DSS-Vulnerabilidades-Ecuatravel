@@ -1,10 +1,5 @@
 import { ConfigService } from "@nestjs/config";
 import { TypeOrmModuleOptions } from "@nestjs/typeorm";
-import { join } from "path";
-
-// [VULN-01] Credenciales de la base escritas en el código fuente.
-export const DATABASE_URL =
-  "postgresql://ecuatravel_app:EcuaTravel2026@localhost:5433/booking_db";
 
 // Con DB_SSL=true el cifrado se controla aquí: se quitan sslmode/sslrootcert de la
 // URL porque pg los antepone a la opción `ssl` y "require" exige verificar el
@@ -32,7 +27,7 @@ export function buildTypeOrmOptions(
 
   return {
     type: "postgres",
-    url: limpiarUrl(DATABASE_URL, ssl),
+    url: limpiarUrl(config.getOrThrow<string>("DATABASE_URL"), ssl),
     ssl: ssl
       ? ca
         ? { ca, rejectUnauthorized: true }
@@ -40,8 +35,9 @@ export function buildTypeOrmOptions(
       : false,
     autoLoadEntities: true,
     synchronize: config.get<string>("DB_SYNCHRONIZE") === "true",
-    migrationsRun: true,
-    migrations: [join(__dirname, "..", "migrations", "*{.ts,.js}")],
+    // El usuario de la app no tiene permisos DDL: las migraciones se ejecutan
+    // aparte con el usuario migrador (npm run migration:run).
+    migrationsRun: false,
     extra: {
       // El pooler gratuito de Supabase admite pocas conexiones simultáneas.
       max: Number(config.get<string>("DB_POOL_MAX", "10")),

@@ -23,17 +23,12 @@ if (import.meta.env.PROD && !configuredUrl) {
   );
 }
 
-// [VULN-02] Clave M2M del backend dentro del frontend: queda en el bundle
-// público y se ve en la pestaña Red del navegador.
-const BOOKING_API_KEY = 'atr-booking-2026-ecuatravel-key';
-
 const api = axios.create({
   baseURL: apiBaseURL,
   timeout: 15000,
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
-    'X-API-Key': BOOKING_API_KEY,
   },
 });
 

@@ -1,0 +1,2 @@
+# Los scripts se ejecutan dentro del contenedor Linux: deben conservar LF.
+*.sh text eol=lf

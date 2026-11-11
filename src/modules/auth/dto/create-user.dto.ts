@@ -23,10 +23,9 @@ export class CreateUserDto {
   @MaxLength(72)
   password: string;
 
-  @ApiProperty({ enum: RolUsuario, default: RolUsuario.ADMIN })
-  @IsOptional()
+  @ApiProperty({ enum: RolUsuario, example: RolUsuario.TURISTA })
   @IsEnum(RolUsuario, { message: "El rol debe ser ADMIN o TURISTA" })
-  rol?: RolUsuario;
+  rol: RolUsuario;
 
   @ApiProperty({ example: "Carlos Administrador", required: false })
   @IsOptional()

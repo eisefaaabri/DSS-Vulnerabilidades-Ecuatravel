@@ -1,18 +1,23 @@
+# Uso: npm run db:up  (equivale a docker compose --env-file .env.db up -d)
 services:
   postgres:
     image: postgres:16
     container_name: dss_ecuatravel_db
     ports:
-      - '5433:5432'
+      # Solo accesible desde esta máquina, no desde la red local.
+      - '127.0.0.1:5433:5432'
     environment:
       POSTGRES_DB: booking_db
-      # [VULN-01] Contraseña del superusuario en texto plano dentro del repositorio.
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Admin2026
+      # Por defecto la imagen confía (trust) en conexiones locales del contenedor.
+      POSTGRES_INITDB_ARGS: --auth-local=scram-sha-256 --auth-host=scram-sha-256
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?Defina POSTGRES_SUPERUSER_PASSWORD en .env.db}
+      MIGRATOR_DB_PASSWORD: ${MIGRATOR_DB_PASSWORD:?Defina MIGRATOR_DB_PASSWORD en .env.db}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Defina APP_DB_PASSWORD en .env.db}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata_seguro:/var/lib/postgresql/data
       - ./database/lab:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
 
 volumes:
-  pgdata:
+  pgdata_seguro:
